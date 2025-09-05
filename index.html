@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Zavrsni Frontend</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/index.tsx"></script>
+    <script>
+      // Show a clear error if the module bundle fails to load/mount
+      setTimeout(() => {
+        const root = document.getElementById('root');
+        if (root && root.children.length === 0) {
+          const el = document.createElement('div');
+          el.setAttribute('role', 'alert');
+          el.style.cssText = 'padding:20px;margin:20px;border:2px solid #c00;background:#fee;color:#600;font-size:1.1rem;';
+          el.textContent = 'App failed to load. Check the dev server and browser console for errors.';
+          document.body.appendChild(el);
+        }
+      }, 2000);
+    </script>
+    <!-- Vite entry - leave as absolute path so dev server can resolve modules -->
+    <script type="module" src="/src/index.tsx"></script>
+    <!-- Inline fallback to surface module load failures quickly for debugging -->
+    <script>
+      // If the module script fails to run, this will show an informative message.
+      setTimeout(() => {
+        const root = document.getElementById('root');
+        if (root && root.innerHTML.trim() === '') {
+          root.innerHTML = '<div style="font-family: Arial, sans-serif; padding:20px; color:#b00;">App failed to load modules. Check browser console and run <code>npm install</code> in the Frontend folder.</div>';
+        }
+      }, 500);
+    </script>
+  </body>
+</html>
