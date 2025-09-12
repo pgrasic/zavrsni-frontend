@@ -3,11 +3,13 @@ import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from "r
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Admin from "./pages/Admin";
+import User from "./pages/User";
 import Medication from "./pages/Medication";
 import MedicationActionPage from "./pages/MedicationAction";
 import Reminders from "./pages/Reminders";
 import Header from './components/Layout/Header';
 import IconPreview from './pages/IconPreview';
+import RequireAuth from './components/Auth/RequireAuth';
 
 const AppInner: React.FC = () => {
   const location = useLocation();
@@ -21,11 +23,30 @@ const AppInner: React.FC = () => {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/admin" element={<Admin />} />
+
+            {/* Protected routes */}
+            <Route
+              path="/admin"
+              element={<RequireAuth><Admin /></RequireAuth>}
+            />
+            <Route
+              path="/user"
+              element={<RequireAuth><User /></RequireAuth>}
+            />
+            <Route
+              path="/medication"
+              element={<RequireAuth><Medication /></RequireAuth>}
+            />
+            <Route
+              path="/reminders"
+              element={<RequireAuth><Reminders /></RequireAuth>}
+            />
+
             <Route path="/icon-preview" element={<IconPreview />} />
-            <Route path="/medication" element={<Medication />} />
-            <Route path="/reminders" element={<Reminders />} />
+
+            {/* Link targets from emails: medication-action may also be protected depending on token usage */}
             <Route path="/medication-action" element={<MedicationActionPage />} />
+
             <Route path="*" element={<Navigate to="/login" />} />
           </Routes>
         </div>

@@ -1,16 +1,42 @@
 import React from "react";
+import { useLocation, useNavigate } from 'react-router-dom';
+import { getCurrentUser } from '../utils/api';
 import LoginForm from "../components/Auth/LoginForm";
+import "../assets/css/register.css"; // reuse the same stylesheet to keep visuals consistent
 
 const Login: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const from = (location.state as any)?.from?.pathname;
+
   const handleSuccess = () => {
-    window.location.href = "/medication";
+    const safeFrom = typeof from === 'string' && from !== '/login' && from !== '/register' ? from : null;
+    const user = getCurrentUser();
+
+    if (safeFrom) {
+      navigate(safeFrom, { replace: true });
+      return;
+    }
+
+    if (user?.is_admin) {
+      navigate('/admin', { replace: true });
+      return;
+    }
+
+    navigate('/medication', { replace: true });
   };
+
   return (
-    <main aria-label="Login page" style={{ textAlign: 'center' }}>
-      <h1 style={{ marginBottom: '1.5rem', fontSize: '56px', lineHeight: '1.1' }}>Prijava</h1>
-      <div style={{ display: 'flex', justifyContent: 'center' }}>
-        <div style={{ width: '420px', maxWidth: '95%' }}>
-          <LoginForm onSuccess={handleSuccess} />
+    <main aria-label="Login page" className="page page--center">
+      <div className="card">
+        <h1 className="card__title">Prijava</h1>
+        <LoginForm onSuccess={handleSuccess} />
+
+        <div className="auth__alt">
+          <span>Novi ste ovdje?</span>
+          <a className="link-button" href="/register">
+            Registriraj se
+          </a>
         </div>
       </div>
     </main>

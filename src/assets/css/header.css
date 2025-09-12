@@ -1,0 +1,76 @@
+/* Distinct header background and clear separation from page */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: linear-gradient(90deg, #eef2f7, #e6edf7);
+  border-bottom: 1px solid #d7dee8;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+/* Align content with the rest of the app and stabilize height */
+.header__container {
+  padding-left: 12px !important;
+  padding-right: 12px !important;
+}
+
+.header__bar {
+  min-height: 72px;
+  gap: 16px;
+}
+
+/* Brand */
+.header__brandBtn {
+  padding: 0 !important;
+  height: auto !important;
+  background: transparent !important;
+}
+
+.header__brand {
+  font-weight: 900;
+  font-size: clamp(20px, 2.2vw, 26px);
+  color: #0b57d0;
+  letter-spacing: 0.2px;
+  line-height: 1;
+}
+
+/* Nav */
+.header__nav {
+  gap: 10px;
+}
+
+/* Base and active states for nav links */
+.header__navlink {
+  display: inline-block;
+  padding: 10px 16px;
+  border-radius: 9999px;
+  font-weight: 800;
+  font-size: clamp(15px, 1.8vw, 18px);
+  color: #0f172a;
+  border: 2px solid transparent;
+  text-decoration: none;
+  transition: background 140ms ease, border-color 140ms ease,
+    transform 80ms ease, color 140ms ease;
+}
+
+.header__navlink:hover {
+  background: #e9eef5;
+}
+
+.header__navlink:active {
+  transform: translateY(0.5px);
+}
+
+.header__navlink.is-active {
+  color: #0b57d0;
+  background: #e8f0fe;
+  border-color: #c9ced6;
+}
+
+/* Improve focus visibility */
+.header__navlink:focus-visible,
+.header__brandBtn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(11, 87, 208, 0.35);
+  border-radius: 12px;
+}

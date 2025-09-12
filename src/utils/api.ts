@@ -33,16 +33,18 @@ export async function getAllMeds() {
   return res.json();
 }
 
-export async function getCurrentUser() {
-  const res = await fetch(`${API_BASE}/user/me`, { headers: getAuthHeaders() });
-  const text = await res.text();
-  let data: any = null;
-  try { data = text ? JSON.parse(text) : null; } catch (e) {}
-  if (!res.ok) {
-    const detail = data?.detail || text || 'Failed to fetch current user';
-    throw new Error(detail);
+export function getCurrentUser() {
+  try {
+    const token = localStorage.getItem("access_token");
+    if (!token) return null;
+    const parts = token.split('.');
+    if (parts.length < 2) return null;
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+    // user object may include sub, email, is_admin, etc.
+    return payload || null;
+  } catch (e) {
+    return null;
   }
-  return data;
 }
 
 export async function getUserReminders() {
@@ -70,7 +72,6 @@ export async function updateKorisnikLijek(lijek_id: number, entry: any) {
     const detail = data?.detail || text || 'Failed to update reminder';
     throw new Error(detail);
   }
-  return data;
 }
 
 export async function deleteKorisnikLijek(lijek_id: number) {
@@ -162,6 +163,106 @@ export async function getStats(): Promise<Stats> {
   return res.json();
 }
 
+// Admin: fetch pending medication requests
+export async function getMedicationRequests() {
+  const res = await fetch(`${API_BASE}/lijekovi/requests`, { headers: getAuthHeaders() });
+  const text = await res.text();
+  let data: any = null;
+  try { data = text ? JSON.parse(text) : null; } catch (e) {}
+  if (!res.ok) {
+    const detail = data?.detail || text || 'Failed to fetch requests';
+    throw new Error(detail);
+  }
+  return data;
+}
+
+export async function approveRequest(requestId: number) {
+  const res = await fetch(`${API_BASE}/lijekovi/${requestId}/approve`, { method: 'PUT', headers: getAuthHeaders() });
+  if (!res.ok) throw new Error('Failed to approve request');
+  return res.json();
+}
+
+export async function rejectRequest(requestId: number) {
+  const res = await fetch(`${API_BASE}/lijekovi/${requestId}/reject`, { method: 'PUT', headers: getAuthHeaders() });
+  if (!res.ok) throw new Error('Failed to reject request');
+  return res.json();
+}
+export async function getUserInfo() {
+  const res = await fetch(`${API_BASE}/korisnici/me`, { headers: getAuthHeaders() });
+  const text = await res.text();
+  let data: any = null;
+  try { data = text ? JSON.parse(text) : null; } catch (e) {
+    // non-JSON response (could be HTML or empty) — keep data as null
+  }
+  if (!res.ok) {
+    const detail = data?.detail || text || 'Failed to fetch user info';
+    throw new Error(detail);
+  }
+  return data;
+}
+    
+export async function updateUserInfo(payload: { ime?: string; prezime?: string; email?: string}) {
+  // basic client-side validation
+  if (payload.email) {
+    const email = String(payload.email).trim();
+    const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+    if (!emailRegex.test(email)) throw new Error('Invalid email format');
+    payload.email = email;
+  }
+  if (payload.ime) payload.ime = String(payload.ime).trim();
+  if (payload.prezime) payload.prezime = String(payload.prezime).trim();
+
+
+  const tokenUserId = getUserIdFromToken();
+  const useIdPath = typeof tokenUserId === 'string' && /^\d+$/.test(tokenUserId);
+  const path = useIdPath ? `/korisnici/${tokenUserId}` : `/korisnici/me`;
+  console.debug('updateUserInfo: using path', path);
+
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(payload),
+  });
+
+  const text = await res.text();
+  let data: any = null;
+  try { data = text ? JSON.parse(text) : null; } catch (e) { /* non-JSON */ }
+
+  // persist token if returned
+  if (data && data.access_token) {
+    try { localStorage.setItem('access_token', data.access_token); } catch (e) {}
+  }
+
+  if (!res.ok) {
+    console.log('updateUserInfo error response', res.status, text);
+    const detail = data?.detail || text || `Failed to update user (status ${res.status})`;
+    // include raw response for easier debugging
+    const err = new Error(detail) as any;
+    err.status = res.status;
+    err.responseText = text;
+    throw err;
+  }
+
+  return data?.user || data || null;
+}
+
+// Create a medication request for admin approval
+export async function createMedicationRequest(payload: { naziv: string; DjelatnaTvar?: string, nestasica?: boolean, accepted?: boolean }) {
+  const res = await fetch(`${API_BASE}/lijekovi`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(payload),
+  });
+  const text = await res.text();
+  let data: any = null;
+  try { data = text ? JSON.parse(text) : null; } catch (e) {}
+  if (!res.ok) {
+    const detail = data?.detail || text || 'Failed to create request';
+    throw new Error(detail);
+  }
+  return data;
+}
+
 export async function submitMedication(data: MedicationInput) {
   const res = await fetch(`${API_BASE}/medication`, {
     method: "POST",
@@ -172,20 +273,29 @@ export async function submitMedication(data: MedicationInput) {
   return res.json();
 }
 
-export async function medicationTaken() {
-  const res = await fetch(`${API_BASE}/medication/taken`, { method: "POST", headers: getAuthHeaders() });
+export async function medicationTaken(lijek_id?: number) {
+  const res = await fetch(`${API_BASE}/korisnik-lijek/${lijek_id}/confirm`, { method: "POST", headers: getAuthHeaders() });
   if (!res.ok) throw new Error("Failed to mark as taken");
   return res.json();
 }
 
-export async function snoozeReminder() {
-  const res = await fetch(`${API_BASE}/medication/snooze`, { method: "POST", headers: getAuthHeaders() });
+export async function snoozeReminder(lijek_id?: number) {
+  const res = await fetch(`${API_BASE}/korisnik-lijek/${lijek_id}/snooze`, { method: "POST", headers: getAuthHeaders() });
   if (!res.ok) throw new Error("Failed to snooze");
   return res.json();
 }
 
-export async function dontRemindToday() {
-  const res = await fetch(`${API_BASE}/medication/dont-remind`, { method: "POST", headers: getAuthHeaders() });
+export async function dontRemindToday(lijek_id?: number) {
+  const res = await fetch(`${API_BASE}/korisnik-lijek/${lijek_id}/skip`, { method: "POST", headers: getAuthHeaders() });
   if (!res.ok) throw new Error("Failed to set don't remind");
   return res.json();
+}
+
+// Client-side logout: clear stored token. Optionally call server logout if available.
+export function logout() {
+  try {
+    localStorage.removeItem("access_token");
+  } catch (e) {
+    // ignore
+  }
 }
