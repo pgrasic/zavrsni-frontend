@@ -48,7 +48,6 @@ const Header: React.FC = () => {
         if (!mounted) return;
         setIsAdmin(Boolean(user?.is_admin));
       } catch {
-        // ignore
       }
     })();
     return () => {

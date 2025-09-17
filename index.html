@@ -9,7 +9,6 @@
     <div id="root"></div>
     <script type="module" src="/src/index.tsx"></script>
     <script>
-      // Show a clear error if the module bundle fails to load/mount
       setTimeout(() => {
         const root = document.getElementById('root');
         if (root && root.children.length === 0) {
@@ -21,11 +20,10 @@
         }
       }, 2000);
     </script>
-    <!-- Vite entry - leave as absolute path so dev server can resolve modules -->
+    
     <script type="module" src="/src/index.tsx"></script>
-    <!-- Inline fallback to surface module load failures quickly for debugging -->
+    
     <script>
-      // If the module script fails to run, this will show an informative message.
       setTimeout(() => {
         const root = document.getElementById('root');
         if (root && root.innerHTML.trim() === '') {

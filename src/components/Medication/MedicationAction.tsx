@@ -1,7 +1,6 @@
 import React from "react";
 
 interface Props {
-  // handlers may be synchronous or async
   onTaken: () => void | Promise<void>;
   onSnooze: () => void | Promise<void>;
   onDontRemind: () => void | Promise<void>;
@@ -17,8 +16,6 @@ const MedicationAction: React.FC<Props> = ({ onTaken, onSnooze, onDontRemind }) 
       setLoading(true);
       await Promise.resolve(fn());
     } catch (err) {
-      // swallow here to avoid unhandled rejection; callers can show feedback via props/wrappers
-      // eslint-disable-next-line no-console
       console.error(err);
     } finally {
       setLoading(false);

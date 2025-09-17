@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { login } from "../../utils/api";
-// import { Link } from "react-router-dom"; // kept removed per your note
 
 const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
 

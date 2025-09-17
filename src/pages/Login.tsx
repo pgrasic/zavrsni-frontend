@@ -2,7 +2,7 @@ import React from "react";
 import { useLocation, useNavigate } from 'react-router-dom';
 import { getCurrentUser } from '../utils/api';
 import LoginForm from "../components/Auth/LoginForm";
-import "../assets/css/register.css"; // reuse the same stylesheet to keep visuals consistent
+import "../assets/css/register.css";
 
 const Login: React.FC = () => {
   const navigate = useNavigate();

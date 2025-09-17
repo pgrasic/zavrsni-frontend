@@ -6,6 +6,8 @@ const UserProfilePanel: React.FC = () => {
   const [name, setName] = useState('');
   const [surname, setSurname] = useState('');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
   const [loading, setLoading] = useState(false);
   const [profileLoading, setProfileLoading] = useState(true);
   const [userId, setUserId] = useState('');
@@ -13,7 +15,6 @@ const UserProfilePanel: React.FC = () => {
   const toast = useToast();
 
   useEffect(() => {
-    // read current user once on mount to seed the form; getUserInfo returns a Promise
     let mounted = true;
     (async () => {
       try {
@@ -25,8 +26,6 @@ const UserProfilePanel: React.FC = () => {
         setEmail(u?.email || '');
         setUserId(u?.sub || '');
       } catch (err: any) {
-        // show toast or ignore; keep form empty
-        // eslint-disable-next-line no-console
         console.error('Failed to load user info', err);
       } finally {
         if (mounted) setProfileLoading(false);
@@ -38,7 +37,14 @@ const UserProfilePanel: React.FC = () => {
   const save = async () => {
     try {
       setLoading(true);
-      await updateUserInfo({ ime: name, prezime: surname, email});
+      if(password){
+        console.log("with password");
+        await updateUserInfo({ ime: name, prezime: surname, email, lozinka: password });
+      }
+      else{
+        console.log("no password");
+      await updateUserInfo({ ime: name, prezime: surname, email });
+      }
       toast({ title: 'Profil spremljen', status: 'success' });
     } catch (e: any) {
       toast({ title: 'Greška', description: e?.message || 'Neuspjeh pri spremanju', status: 'error' });
@@ -63,6 +69,10 @@ const UserProfilePanel: React.FC = () => {
       <FormControl mb={3}>
         <FormLabel>Email</FormLabel>
         <Input value={email} onChange={(e) => setEmail(e.target.value)} type="email" />
+      </FormControl>
+      <FormControl mb={3}>
+        <FormLabel>Lozinka</FormLabel>
+        <Input value={password} onChange={(e) => setPassword(e.target.value)} type="password" />
       </FormControl>
       <Button colorScheme="blue" onClick={save} isLoading={loading}>Spremi</Button>
     </Box>

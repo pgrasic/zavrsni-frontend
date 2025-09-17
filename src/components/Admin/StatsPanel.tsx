@@ -55,61 +55,85 @@ const StatsPanel: React.FC = () => {
 
       <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} mb={6}>
         <Stat p={4} borderWidth={1} borderRadius="md" bg="gray.50">
-          <StatLabel>Total users</StatLabel>
+          <StatLabel>Ukupno korisnika</StatLabel>
           <StatNumber>{stats.total_users}</StatNumber>
         </Stat>
-
         <Stat p={4} borderWidth={1} borderRadius="md" bg="gray.50">
-          <StatLabel>Total meds</StatLabel>
+          <StatLabel>Ukupno lijekova</StatLabel>
           <StatNumber>{stats.total_meds}</StatNumber>
         </Stat>
-
         <Stat p={4} borderWidth={1} borderRadius="md" bg="gray.50">
-          <StatLabel>Sent reminders</StatLabel>
+          <StatLabel>Poslanih podsjetnika</StatLabel>
           <StatNumber>{stats.sent_reminders}</StatNumber>
         </Stat>
-
         <Stat p={4} borderWidth={1} borderRadius="md" bg="gray.50">
-          <StatLabel>Confirmed reminders</StatLabel>
+          <StatLabel>Potvrđenih podsjetnika</StatLabel>
           <StatNumber>{stats.confirmed_reminders}</StatNumber>
         </Stat>
       </SimpleGrid>
 
       <VStack align="stretch" spacing={4}>
-        <Box p={4} borderWidth={1} borderRadius="md" bg="white">
-          <Heading as="h3" size="md" mb={2}>
-            Most loaded user
-          </Heading>
-          <Text>{stats.most_loaded_user ?? "N/A"}</Text>
-        </Box>
-
+        
         <Box p={4} borderWidth={1} borderRadius="md" bg="white">
           <Heading as="h3" size="md" mb={2}>
             Lijek relative
           </Heading>
 
-          {stats.lijek_relative && Object.keys(stats.lijek_relative).length > 0 ? (
-            <TableContainer>
-              <Table size="sm" variant="simple">
-                <Thead>
-                  <Tr>
-                    <Th>User ID</Th>
-                    <Th isNumeric>Relative</Th>
-                  </Tr>
-                </Thead>
-                <Tbody>
-                  {Object.entries(stats.lijek_relative).map(([userId, rel]) => (
-                    <Tr key={userId}>
-                      <Td>{userId}</Td>
-                      <Td isNumeric>{(rel * 100).toFixed(1)}%</Td>
-                    </Tr>
-                  ))}
-                </Tbody>
-              </Table>
-            </TableContainer>
-          ) : (
-            <Text>N/A</Text>
-          )}
+          <Box w="100%" display="flex" justifyContent="center">
+            {stats.lijek_relative && Object.keys(stats.lijek_relative).length > 0 ? (
+              <Box maxW="1000px" w="100%" pt={2}>
+                <Box display="grid" gridTemplateColumns="48px 1fr" alignItems="end" minH="220px">
+                  <Box position="relative" minW="48px" h="200px" display="flex" flexDirection="column" alignItems="flex-end" justifyContent="flex-end">
+                    <Text fontSize="xs" color="gray.400" position="absolute" left={-20} top="35%" transform="rotate(-90deg) translateY(-50%)" whiteSpace="nowrap">Relative (%)</Text>
+                    <Box position="absolute" left={20} top={0} bottom={0} w="2px" bg="gray.400" borderRadius="full" zIndex={1} />
+                    <Box position="absolute" left={0} top={0} h="180px" w="48px" display="flex" flexDirection="column" justifyContent="space-between" zIndex={2}>
+                      {[100, 75, 50, 25, 0].map((val, idx) => (
+                        <Box key={val} display="flex" alignItems="center" h="36px">
+                          <Text fontSize="xs" color="gray.500" w="28px" textAlign="right">{val}%</Text>
+                          <Box ml={1} w="8px" h="1px" bg="gray.500" />
+                        </Box>
+                      ))}
+                    </Box>
+                  </Box>
+                  <Box>
+                    <Box display="flex" alignItems="flex-end" h="180px">
+                      {Object.entries(stats.lijek_relative).map(([userId, rel]) => {
+                        const percent = Math.max(0, Math.min(100, rel * 100));
+                        return (
+                          <Box key={userId} mx={1} display="flex" flexDirection="column" alignItems="center" w="40px">
+                            <Text mb={"2px"} fontSize="xs" color="gray.500">{percent.toFixed(1)}%</Text>
+                            <Box
+                              aria-label={`Relative bar for user ${userId}`}
+                              bgGradient="linear(to-t, teal.400, teal.200)"
+                              w="100%"
+                              borderRadius="md"
+                              transition="height 0.4s"
+                              h={`${percent * 1.6}px`}
+                              minH="4px"
+                              maxH="160px"
+                            />
+                          </Box>
+                        );
+                      })}
+                    </Box>
+                    <Box mt={2} h="1px" bg="gray.300" w="100%" position="relative" />
+                    <Box display="flex" mt={1}>
+                      {Object.entries(stats.lijek_relative).map(([userId]) => (
+                        <Box key={userId} w="40px" mx={1} textAlign="center">
+                          <Text fontSize="xs" color="gray.700" wordBreak="break-all">{userId}</Text>
+                        </Box>
+                      ))}
+                    </Box>
+                    <Box mt={1} position="relative" h="16px">
+                      <Text position="absolute" left="50%" top="0" transform="translateX(-50%)" fontSize="xs" color="gray.600">Korisnik</Text>
+                    </Box>
+                  </Box>
+                </Box>
+              </Box>
+            ) : (
+              <Text>N/A</Text>
+            )}
+          </Box>
         </Box>
       </VStack>
     </Box>

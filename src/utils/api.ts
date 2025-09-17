@@ -2,8 +2,6 @@ import { RegisterInput } from "../types/auth";
 import { MedicationInput } from "../types/medication";
 import { Stats } from "../types/stats";
 
-// Backend default port in src/main.py is 8080. Update here if backend uses a different port.
-// Backend routers are mounted at root (e.g. /login, /register, /stats)
 const API_BASE = "http://localhost:8080";
 
 function getAuthHeaders() {
@@ -13,7 +11,6 @@ function getAuthHeaders() {
   return headers;
 }
 
-// Decode JWT without verifying to extract 'sub' (user id) for client-side use
 export function getUserIdFromToken() {
   try {
     const token = localStorage.getItem("access_token");
@@ -40,7 +37,6 @@ export function getCurrentUser() {
     const parts = token.split('.');
     if (parts.length < 2) return null;
     const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
-    // user object may include sub, email, is_admin, etc.
     return payload || null;
   } catch (e) {
     return null;
@@ -106,7 +102,6 @@ export async function createKorisnikLijek(entry: any) {
 }
 
 export async function login(email: string, password: string) {
-  // Backend expects field name `lozinka` for password
   const res = await fetch(`${API_BASE}/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -117,13 +112,11 @@ export async function login(email: string, password: string) {
   try {
     data = text ? JSON.parse(text) : null;
   } catch (e) {
-    // not JSON
   }
   if (!res.ok) {
     const detail = data?.detail || data?.message || text || "Login failed";
     throw new Error(detail);
   }
-  // backend may return { access_token, token_type } or { user, access_token }
   const token = data?.access_token || (data && data.access_token) || null;
   if (token) {
     localStorage.setItem("access_token", token);
@@ -132,7 +125,6 @@ export async function login(email: string, password: string) {
 }
 
 export async function register(data: RegisterInput) {
-  // Backend expects fields: ime, prezime, email, lozinka
   const payload = {
     ime: (data as any).name || (data as any).ime || "",
     prezime: (data as any).surname || "",
@@ -151,7 +143,6 @@ export async function register(data: RegisterInput) {
     const detail = resp?.detail || text || "Register failed";
     throw new Error(detail);
   }
-  // store token if returned
   const token = resp?.access_token || null;
   if (token) localStorage.setItem("access_token", token);
   return resp;
@@ -163,7 +154,6 @@ export async function getStats(): Promise<Stats> {
   return res.json();
 }
 
-// Admin: fetch pending medication requests
 export async function getMedicationRequests() {
   const res = await fetch(`${API_BASE}/lijekovi/requests`, { headers: getAuthHeaders() });
   const text = await res.text();
@@ -192,7 +182,6 @@ export async function getUserInfo() {
   const text = await res.text();
   let data: any = null;
   try { data = text ? JSON.parse(text) : null; } catch (e) {
-    // non-JSON response (could be HTML or empty) — keep data as null
   }
   if (!res.ok) {
     const detail = data?.detail || text || 'Failed to fetch user info';
@@ -201,8 +190,7 @@ export async function getUserInfo() {
   return data;
 }
     
-export async function updateUserInfo(payload: { ime?: string; prezime?: string; email?: string}) {
-  // basic client-side validation
+export async function updateUserInfo(payload: { ime?: string; prezime?: string; email?: string, lozinka?: string }) {
   if (payload.email) {
     const email = String(payload.email).trim();
     const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
@@ -226,9 +214,8 @@ export async function updateUserInfo(payload: { ime?: string; prezime?: string; 
 
   const text = await res.text();
   let data: any = null;
-  try { data = text ? JSON.parse(text) : null; } catch (e) { /* non-JSON */ }
+  try { data = text ? JSON.parse(text) : null; } catch (e) { }
 
-  // persist token if returned
   if (data && data.access_token) {
     try { localStorage.setItem('access_token', data.access_token); } catch (e) {}
   }
@@ -236,7 +223,6 @@ export async function updateUserInfo(payload: { ime?: string; prezime?: string; 
   if (!res.ok) {
     console.log('updateUserInfo error response', res.status, text);
     const detail = data?.detail || text || `Failed to update user (status ${res.status})`;
-    // include raw response for easier debugging
     const err = new Error(detail) as any;
     err.status = res.status;
     err.responseText = text;
@@ -246,7 +232,6 @@ export async function updateUserInfo(payload: { ime?: string; prezime?: string; 
   return data?.user || data || null;
 }
 
-// Create a medication request for admin approval
 export async function createMedicationRequest(payload: { naziv: string; DjelatnaTvar?: string, nestasica?: boolean, accepted?: boolean }) {
   const res = await fetch(`${API_BASE}/lijekovi`, {
     method: 'POST',
@@ -291,11 +276,9 @@ export async function dontRemindToday(lijek_id?: number) {
   return res.json();
 }
 
-// Client-side logout: clear stored token. Optionally call server logout if available.
 export function logout() {
   try {
     localStorage.removeItem("access_token");
   } catch (e) {
-    // ignore
   }
 }

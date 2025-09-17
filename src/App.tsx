@@ -16,15 +16,15 @@ const AppInner: React.FC = () => {
   const hideHeader = location.pathname === '/login' || location.pathname === '/register';
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-  {/* Header should span full width; Header component centers its inner content */}
+  
   {!hideHeader && <Header />}
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ width: '900px', maxWidth: '95%' }}>
+  <div style={{ width: '1150px', maxWidth: '100%' }}>
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
 
-            {/* Protected routes */}
+            
             <Route
               path="/admin"
               element={<RequireAuth><Admin /></RequireAuth>}
@@ -44,7 +44,7 @@ const AppInner: React.FC = () => {
 
             <Route path="/icon-preview" element={<IconPreview />} />
 
-            {/* Link targets from emails: medication-action may also be protected depending on token usage */}
+
             <Route path="/medication-action" element={<MedicationActionPage />} />
 
             <Route path="*" element={<Navigate to="/login" />} />
