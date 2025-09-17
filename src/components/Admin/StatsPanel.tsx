@@ -84,12 +84,12 @@ const StatsPanel: React.FC = () => {
               <Box maxW="1000px" w="100%" pt={2}>
                 <Box display="grid" gridTemplateColumns="48px 1fr" alignItems="end" minH="220px">
                   <Box position="relative" minW="48px" h="200px" display="flex" flexDirection="column" alignItems="flex-end" justifyContent="flex-end">
-                    <Text fontSize="xs" color="gray.400" position="absolute" left={-20} top="35%" transform="rotate(-90deg) translateY(-50%)" whiteSpace="nowrap">Relative (%)</Text>
-                    <Box position="absolute" left={20} top={0} bottom={0} w="2px" bg="gray.400" borderRadius="full" zIndex={1} />
-                    <Box position="absolute" left={0} top={0} h="180px" w="48px" display="flex" flexDirection="column" justifyContent="space-between" zIndex={2}>
+                    <Text fontSize="xs" color="gray.700" position="absolute" left={-20} top="35%" transform="rotate(-90deg) translateY(-50%)" whiteSpace="nowrap">Relative (%)</Text>
+                    <Box position="absolute" left={41} top={-2} bottom={33} w="2px" bg="gray.400" borderRadius="full" zIndex={1} />
+                    <Box position="absolute" left={1} top={-5} h="180px" w="48px" display="flex" flexDirection="column" justifyContent="space-between" zIndex={2}>
                       {[100, 75, 50, 25, 0].map((val, idx) => (
                         <Box key={val} display="flex" alignItems="center" h="36px">
-                          <Text fontSize="xs" color="gray.500" w="28px" textAlign="right">{val}%</Text>
+                          <Text fontSize="xs" color="gray.500" w="35px" textAlign="right">{val}%</Text>
                           <Box ml={1} w="8px" h="1px" bg="gray.500" />
                         </Box>
                       ))}
@@ -108,7 +108,7 @@ const StatsPanel: React.FC = () => {
                               w="100%"
                               borderRadius="md"
                               transition="height 0.4s"
-                              h={`${percent * 1.6}px`}
+                              h={`${percent * 1}px`}
                               minH="4px"
                               maxH="160px"
                             />
@@ -125,7 +125,7 @@ const StatsPanel: React.FC = () => {
                       ))}
                     </Box>
                     <Box mt={1} position="relative" h="16px">
-                      <Text position="absolute" left="50%" top="0" transform="translateX(-50%)" fontSize="xs" color="gray.600">Korisnik</Text>
+                      <Text position="absolute" left="50%" top="0" transform="translateX(-50%)" fontSize="xs" color="gray.700">Korisnik</Text>
                     </Box>
                   </Box>
                 </Box>
