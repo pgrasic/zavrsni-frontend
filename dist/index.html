@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Zavrsni Frontend</title>
+    <script type="module" crossorigin src="/assets/index-c546136c.js"></script>
+    <link rel="stylesheet" href="/assets/index-14eb3db7.css">
+  </head>
+  <body>
+    <div id="root"></div>
+    
+    <script>
+      setTimeout(() => {
+        const root = document.getElementById('root');
+        if (root && root.children.length === 0) {
+          const el = document.createElement('div');
+          el.setAttribute('role', 'alert');
+          el.style.cssText = 'padding:20px;margin:20px;border:2px solid #c00;background:#fee;color:#600;font-size:1.1rem;';
+          el.textContent = 'App failed to load. Check the dev server and browser console for errors.';
+          document.body.appendChild(el);
+        }
+      }, 2000);
+    </script>
+    
+    
+    
+    <script>
+      setTimeout(() => {
+        const root = document.getElementById('root');
+        if (root && root.innerHTML.trim() === '') {
+          root.innerHTML = '<div style="font-family: Arial, sans-serif; padding:20px; color:#b00;">App failed to load modules. Check browser console and run <code>npm install</code> in the Frontend folder.</div>';
+        }
+      }, 500);
+    </script>
+  </body>
+</html>

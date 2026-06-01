@@ -9,4 +9,5 @@ export interface KorisnikLijekRead {
   pocetno_vrijeme: string; // ISO datetime
   razmak_sati: number;
   kolicina: number;
+  status: string;
 }

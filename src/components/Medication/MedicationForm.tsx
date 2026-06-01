@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
-  getAllMeds,
+  searchMeds,
   createKorisnikLijek,
   getUserIdFromToken,
 } from "../../utils/api";
@@ -24,15 +24,17 @@ function formatCroatianDateWith24Hour(isoLike: Date | string | null) {
   )}`;
 }
 
+const DEBOUNCE_MS = 250;
+
 const MedicationForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
-  const [meds, setMeds] = useState<Array<any>>([]);
+  const [searchResults, setSearchResults] = useState<Array<any>>([]);
   const [medId, setMedId] = useState<number | null>(null);
   const [search, setSearch] = useState<string>("");
   const [startTime, setStartTime] = useState<Date | null>(new Date());
   const [intervalHours, setIntervalHours] = useState<number>(24);
   const [quantity, setQuantity] = useState<number>(1);
   const [loading, setLoading] = useState(false);
-  const [loadingMeds, setLoadingMeds] = useState(true);
+  const [searching, setSearching] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState<boolean>(false);
   const [errors, setErrors] = useState<{
     search?: string;
@@ -40,24 +42,25 @@ const MedicationForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
     intervalHours?: string;
     quantity?: string;
   }>({});
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
-    setLoadingMeds(true);
-    getAllMeds()
-      .then((data) => setMeds(data || []))
-      .catch(() => {
-        /* optionally show a page-level alert */
-      })
-      .finally(() => setLoadingMeds(false));
-  }, []);
-
-  const filteredMeds = useMemo(
-    () =>
-      meds.filter((m: any) =>
-        m.naziv.toLowerCase().includes(search.toLowerCase())
-      ),
-    [meds, search]
-  );
+    if (!search.trim()) {
+      setSearchResults([]);
+      setSearching(false);
+      return;
+    }
+    const timer = setTimeout(() => {
+      abortRef.current?.abort();
+      abortRef.current = new AbortController();
+      setSearching(true);
+      searchMeds(search, abortRef.current.signal)
+        .then((data) => setSearchResults(data || []))
+        .catch((err) => { if (err.name !== "AbortError") setSearchResults([]); })
+        .finally(() => setSearching(false));
+    }, DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   const validate = () => {
     const e: typeof errors = {};
@@ -90,9 +93,9 @@ const MedicationForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
       });
 
       onSuccess();
-      // reset
       setMedId(null);
       setSearch("");
+      setSearchResults([]);
       setStartTime(new Date());
       setIntervalHours(24);
       setQuantity(1);
@@ -101,15 +104,6 @@ const MedicationForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
       setLoading(false);
     }
   };
-
-  if (loadingMeds) {
-    return (
-      <div className="form form--loading">
-        <div className="spinner" aria-hidden="true"></div>
-        <div>Učitavanje lijekova...</div>
-      </div>
-    );
-  }
 
   return (
     <form
@@ -122,78 +116,77 @@ const MedicationForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
         <label htmlFor="medication-search" className="form__label">
           Lijek
         </label>
-        <div className="input-with-button">
-          <input
-            id="medication-search"
-            type="text"
-            className={`form__input ${
-              errors.search ? "form__input--invalid" : ""
-            }`}
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setShowSuggestions(true);
-              setMedId(null);
-              if (errors.search)
-                setErrors((prev) => ({ ...prev, search: undefined }));
-            }}
-            onFocus={() => setShowSuggestions(true)}
-            placeholder="Pretraži i odaberi lijek"
-            aria-required="true"
-            aria-invalid={Boolean(errors.search)}
-            aria-describedby={
-              errors.search ? "medication-search-error" : undefined
-            }
-          />
-          {search && (
-            <button
-              type="button"
-              className="icon-button"
-              aria-label="Očisti"
-              onClick={() => {
-                setSearch("");
+        <div className="search-container">
+          <div className="input-with-button">
+            <input
+              id="medication-search"
+              type="text"
+              className={`form__input ${
+                errors.search ? "form__input--invalid" : ""
+              }`}
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setShowSuggestions(true);
                 setMedId(null);
-                setShowSuggestions(false);
+                if (errors.search)
+                  setErrors((prev) => ({ ...prev, search: undefined }));
               }}
-            >
-              Očisti
-            </button>
-          )}
-        </div>
-
-        {showSuggestions && (
-          <div className="dropdown">
-            <div className="dropdown__header">
-              <span>Rezultati</span>
+              onFocus={() => setShowSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+              placeholder="Pretraži i odaberi lijek"
+              aria-required="true"
+              aria-invalid={Boolean(errors.search)}
+              aria-describedby={
+                errors.search ? "medication-search-error" : undefined
+              }
+              aria-autocomplete="list"
+              aria-controls="medication-dropdown"
+              aria-expanded={showSuggestions}
+            />
+            {search && (
               <button
                 type="button"
-                className="dropdown__close"
-                onClick={() => setShowSuggestions(false)}
+                className="icon-button"
+                aria-label="Očisti"
+                onClick={() => {
+                  setSearch("");
+                  setMedId(null);
+                  setShowSuggestions(false);
+                }}
               >
-                Zatvori
+                Očisti
               </button>
-            </div>
-            <ul className="dropdown__list" role="listbox">
-              {filteredMeds.length === 0 && (
-                <li className="dropdown__empty">Nema rezultata</li>
-              )}
-              {filteredMeds.map((m: any) => (
-                <li
-                  key={m.id}
-                  className="dropdown__item"
-                  role="option"
-                  onClick={() => {
-                    setMedId(Number(m.id));
-                    setSearch(m.naziv);
-                    setShowSuggestions(false);
-                  }}
-                >
-                  {m.naziv}
-                </li>
-              ))}
-            </ul>
+            )}
           </div>
-        )}
+
+          {showSuggestions && search.trim() && (
+            <div className="dropdown" id="medication-dropdown" role="listbox">
+              {searching ? (
+                <div className="dropdown__empty">Pretraživanje...</div>
+              ) : searchResults.length === 0 ? (
+                <div className="dropdown__empty">Nema rezultata</div>
+              ) : (
+                <ul className="dropdown__list">
+                  {searchResults.map((m: any) => (
+                    <li
+                      key={m.id}
+                      className="dropdown__item"
+                      role="option"
+                      onMouseDown={() => {
+                        setMedId(Number(m.id));
+                        setSearch(m.naziv);
+                        setShowSuggestions(false);
+                      }}
+                    >
+                      {m.naziv}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </div>
         {errors.search && (
           <small id="medication-search-error" className="form__error-inline">
             {errors.search}

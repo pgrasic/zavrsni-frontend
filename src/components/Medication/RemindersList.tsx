@@ -7,6 +7,7 @@ import {
   medicationTaken,
   snoozeReminder,
   dontRemindToday,
+  getLastReminderLog,
 } from "../../utils/api";
 import { KorisnikLijekRead } from "../../types/medication";
 import {
@@ -34,6 +35,7 @@ const RemindersList: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState<EditState>({});
   const [meds, setMeds] = useState<any[]>([]);
+  const [lastLogs, setLastLogs] = useState<Record<number, string | null>>({});
   const toast = useToast();
 
   function toLocalDatetimeValue(d: Date) {
@@ -50,6 +52,16 @@ const RemindersList: React.FC = () => {
     return `${dd}/${mm}/${yyyy}`;
   };
 
+  const formatDateTimeDDMMYYYY = (ms: number) => {
+    const d = new Date(ms);
+    const dd = String(d.getDate()).padStart(2, "0");
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const yyyy = d.getFullYear();
+    const hh = String(d.getHours()).padStart(2, "0");
+    const min = String(d.getMinutes()).padStart(2, "0");
+    return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
+  };
+
   useEffect(() => {
     async function load() {
       try {
@@ -58,8 +70,17 @@ const RemindersList: React.FC = () => {
           getUserReminders(),
           getAllMeds(),
         ]);
-        setItems(rem || []);
+        const reminders: KorisnikLijekRead[] = rem || [];
+        setItems(reminders);
         setMeds(allMeds || []);
+        const logEntries = await Promise.all(
+          reminders.map((r) => getLastReminderLog(r.lijek_id))
+        );
+        const logsMap: Record<number, string | null> = {};
+        reminders.forEach((r, i) => {
+          logsMap[r.lijek_id] = logEntries[i]?.changed_at ?? null;
+        });
+        setLastLogs(logsMap);
       } catch (e: any) {
         setError(e?.message || "Failed to load reminders");
       } finally {
@@ -68,6 +89,11 @@ const RemindersList: React.FC = () => {
     }
     load();
   }, []);
+
+  const refreshLastLog = async (lijek_id: number) => {
+    const entry = await getLastReminderLog(lijek_id);
+    setLastLogs((prev) => ({ ...prev, [lijek_id]: entry?.changed_at ?? null }));
+  };
 
   const startEdit = (lijek_id: number) => {
     const item = items.find((i) => i.lijek_id === lijek_id);
@@ -161,6 +187,15 @@ const RemindersList: React.FC = () => {
           const edit = editing[item.lijek_id] || {};
           const med = meds.find((m) => m.id === item.lijek_id);
 
+          const intervalMs = item.razmak_sati * 3_600_000;
+          const baseMs = lastLogs[item.lijek_id]
+            ? new Date(lastLogs[item.lijek_id]!).getTime()
+            : new Date(item.pocetno_vrijeme).getTime();
+          let nextDueMs = baseMs + intervalMs;
+          const now = Date.now();
+          while (nextDueMs <= now) nextDueMs += intervalMs;
+          const isConfirmed = item.status === "confirmed" && now < nextDueMs;
+
           return (
             <Box
               key={item.lijek_id}
@@ -181,6 +216,7 @@ const RemindersList: React.FC = () => {
                     </span>
                     <span>Svakih: {item.razmak_sati} h</span>
                     <span>Količina: {item.kolicina}</span>
+                    <span>Sljedeća doza: {formatDateTimeDDMMYYYY(nextDueMs)}</span>
                   </div>
                 </Box>
 
@@ -201,10 +237,14 @@ const RemindersList: React.FC = () => {
                       Obriši
                     </Button>
                     <MedicationAction
+                      confirmed={isConfirmed}
                       onTaken={async () => {
                         try {
                           await medicationTaken(item.lijek_id);
                           toast({ title: "Označeno kao uzeto", status: "success" });
+                          const rem = await getUserReminders();
+                          setItems(rem || []);
+                          await refreshLastLog(item.lijek_id);
                         } catch (e: any) {
                           console.error(e);
                           toast({

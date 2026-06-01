@@ -30,6 +30,15 @@ export async function getAllMeds() {
   return res.json();
 }
 
+export async function searchMeds(query: string, signal?: AbortSignal) {
+  const res = await fetch(
+    `${API_BASE}/lijekovi/search?q=${encodeURIComponent(query)}`,
+    { headers: getAuthHeaders(), signal }
+  );
+  if (!res.ok) throw new Error("Failed to search medications");
+  return res.json();
+}
+
 export function getCurrentUser() {
   try {
     const token = localStorage.getItem("access_token");
@@ -273,6 +282,12 @@ export async function snoozeReminder(lijek_id?: number) {
 export async function dontRemindToday(lijek_id?: number) {
   const res = await fetch(`${API_BASE}/korisnik-lijek/${lijek_id}/skip`, { method: "POST", headers: getAuthHeaders() });
   if (!res.ok) throw new Error("Failed to set don't remind");
+  return res.json();
+}
+
+export async function getLastReminderLog(lijek_id: number): Promise<{ changed_at: string | null; status: string | null }> {
+  const res = await fetch(`${API_BASE}/korisnik-lijek/${lijek_id}/last-log`, { headers: getAuthHeaders() });
+  if (!res.ok) return { changed_at: null, status: null };
   return res.json();
 }
 
